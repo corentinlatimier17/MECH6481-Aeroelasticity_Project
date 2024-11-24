@@ -85,11 +85,11 @@ class pkmethod():
             plt.tight_layout()
             plt.show()
         else:
-            print("Error : you have ro use first .run() method ! ")
+            print("Error : you have to use first .run() method ! ")
         
     def find_flutter(self):
         if self.k_sol is None: 
-            print("Error : you have ro use first .run() method ! ")
+            print("Error : you have to use first .run() method ! ")
             return -1
         else:
             self.flutter_speed = None

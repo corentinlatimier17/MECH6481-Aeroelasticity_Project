@@ -45,7 +45,7 @@ class pmethod():
     
     def plot_results(self):
         if self.roots is None: 
-            print("Error : you have ro use first .run() method ! ")
+            print("Error : you have to use first .run() method ! ")
         else:
             # Create subplots
             fig, axs = plt.subplots(1, 2, figsize=(16, 6))  # 1 row, 2 columns
@@ -76,7 +76,7 @@ class pmethod():
     
     def find_flutter(self):
         if self.roots is None: 
-            print("Error : you have ro use first .run() method ! ")
+            print("Error : you have to use first .run() method ! ")
             return -1
         else:
             self.flutter_speed = None
