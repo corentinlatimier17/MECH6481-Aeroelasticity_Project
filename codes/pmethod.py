@@ -97,14 +97,6 @@ class pmethod():
                 print("No flutter speed found within the specified range.")
             return self.flutter_speed, self.flutter_frequency
     
-# Model validation for p-method using eigenvalue analysis (see Handout 1 for further informations)
-# Method is validated by comparings results with Hodges & Pierces (Fig. 5.3 & 5.4 [p.186-187])
-# -> This code has been validated and gives the same flutter speed and flutter frequency than the Hodges & Pierces book 
-
-p_method = pmethod(a=-1/5, e=-1/20, mu=20, r=np.sqrt(6/25), sigma=2/5, V_vec=np.linspace(0.01, 3, 100))
-p_method.run()
-p_method.plot_results()
-
 
 
 

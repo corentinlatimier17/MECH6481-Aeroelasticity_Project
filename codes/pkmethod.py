@@ -125,6 +125,3 @@ class pkmethod():
         return ((8*self.mu*self.r**2)/V**2 + 4j*(1+2*self.a)*(2j-k*(1-2*self.a))*self.C(k)-k*(k-4j+8*self.a*(1j+self.a*k)))/(8*self.mu)
 
 
-pk_method = pkmethod(a=-1/5, e=-1/10, mu=20, r=np.sqrt(6/25), sigma=2/5, V_vec=np.linspace(0.01, 3, 200))
-pk_method.run()
-pk_method.plot_results()
