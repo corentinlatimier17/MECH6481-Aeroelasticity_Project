@@ -14,7 +14,7 @@ def identify_flutter_speed(V_vec, roots):
     flutter_frequency = None
     for i, V in enumerate(V_vec):
         for rt in roots[i]:
-            if rt.real > 0.01 and rt.imag > 0:
+            if rt.real > 0.01 and rt.imag > 0: # the 0.01 can be modified depending on the case
                 flutter_speed = V 
                 flutter_frequency = rt.imag*V
                 break
