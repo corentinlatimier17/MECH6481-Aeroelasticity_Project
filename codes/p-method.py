@@ -18,8 +18,6 @@ class pmethod():
 
     def run(self):
         # Matrix to store the complex-roots -> for a given reduced velocity, the 4 roots are stored in the corresponding row
-        self.flutter_speed = None
-        self.flutter_frequency = None
         self.roots = np.zeros((len(self.V_vec), 4), dtype=complex)
         for i,V  in enumerate(self.V_vec):
             # Construct mass matrix
@@ -77,21 +75,27 @@ class pmethod():
             plt.show()
     
     def find_flutter(self):
-        # IDENTIFY REDUCED FLUTTER SPEED 
-        for i, V in enumerate(self.V_vec):
-            for rt in self.roots[i]:
-                if rt.real > 0.01 and rt.imag > 0: # the 0.01 can be modified depending on the case
-                    self.flutter_speed = V 
-                    self.flutter_frequency = rt.imag*V
-                    break
-            if self.flutter_speed is not None:
-                break 
-
-        if self.flutter_speed is not None:
-            print(f"The recuced flutter speed is approximately: {self.flutter_speed} and reduced flutter frequency is {self.flutter_frequency}")
+        if self.roots is None: 
+            print("Error : you have ro use first .run() method ! ")
+            return -1
         else:
-            print("No flutter speed found within the specified range.")
-        return self.flutter_speed, self.flutter_frequency
+            self.flutter_speed = None
+            self.flutter_frequency = None
+            # IDENTIFY REDUCED FLUTTER SPEED 
+            for i, V in enumerate(self.V_vec):
+                for rt in self.roots[i]:
+                    if rt.real > 0.01 and rt.imag > 0: # the 0.01 can be modified depending on the case
+                        self.flutter_speed = V 
+                        self.flutter_frequency = rt.imag*V
+                        break
+                if self.flutter_speed is not None:
+                    break 
+
+            if self.flutter_speed is not None:
+                print(f"The recuced flutter speed is approximately: {self.flutter_speed} and reduced flutter frequency is {self.flutter_frequency}")
+            else:
+                print("No flutter speed found within the specified range.")
+            return self.flutter_speed, self.flutter_frequency
     
 # Model validation for p-method using eigenvalue analysis (see Handout 1 for further informations)
 # Method is validated by comparings results with Hodges & Pierces (Fig. 5.3 & 5.4 [p.186-187])
