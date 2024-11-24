@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import eig
 
-# Model validation for p-method using eigenvalue analysis (see Handout 1) for further informations
+# Model validation for p-method using eigenvalue analysis (see Handout 1 for further informations)
 # Method is validated by comparings results with Hodges & Pierces (Fig. 5.3 & 5.4 [p.186-187])
 
 # -> This code has been validated and gives the same flutter speed and flutter frequency than the Hodges & Pierces book 
