@@ -22,69 +22,52 @@ def flight_envelope(h):
         vmax = 302
     return vmin, vmax
 
-def rho(h):
+def rho_fun(h):
    # This function returns the density of air [kg/m³] depending on a given altitude h [km]
    # International Standard Atmosphere is used
    T = T0 - 0.0065*h*10**(3)
    rho = RHO_0*(T/T0)**(G/(0.0065*R)-1)
    return rho
 
-def get_V_eq(h):
-    # This function returns the maximum equivalent airspeed for a given altitude h [km]
-    vmin, vmax = flight_envelope(h)
-    return vmin*np.sqrt(rho(h)/RHO_0), vmax*np.sqrt(rho(h)/RHO_0)
 
-def plot_flight_envelopes():
+def plot_flight_envelope():
     # Define h vector
     h_vec = np.linspace(0, 3, 100)
-    V = np.zeros((len(h_vec), 4)) # for each row (h constant) -> store vmin, vmax, vmin_eq, vmax_eq
+    V = np.zeros((len(h_vec), 2)) # for each row (h constant) -> store vmin, vmax
 
     # Calculate vmin and vmax
     for i, h in enumerate(h_vec):
         V[i, 0], V[i, 1] = flight_envelope(h)
-        V[i, 2], V[i, 3] = get_V_eq(h)
-
-    # Create figure with two subplots
-    fig, axes = plt.subplots(2, 1, figsize=(10, 16), constrained_layout=True)
 
     # First subplot: True airspeed flight envelope
-    ax = axes[0]
     h_closed = np.concatenate([h_vec, h_vec[::-1]])  # Combine h and its reverse
     V_closed = np.concatenate([V[:, 1], V[::-1, 0]])  # Combine vmax and reversed vmin
-    ax.plot(V[:, 0], h_vec, color="blue", label=r"Min true airspeed $V_{min}^{true}$")
-    ax.plot(V[:, 1], h_vec, color="red", label=r"Max true airspeed $V_{max}^{true}$")
-    ax.fill(V_closed, h_closed, color="lightblue", alpha=0.6, label="Flight Envelope")
-    ax.hlines(0, flight_envelope(0)[0], flight_envelope(0)[1], colors="black", linestyles="--", linewidth=1.5)
-    ax.hlines(3, flight_envelope(3)[0], flight_envelope(3)[1], colors="black", linestyles="--", linewidth=1.5)
-    ax.set_xlabel("True airspeed [km/h]", fontsize=12)
-    ax.set_ylabel("Altitude (h) [km]", fontsize=12)
-    ax.set_title("True Airspeed Flight Envelope", fontsize=14)
-    ax.set_xlim(-10, 350)
-    ax.legend(fontsize=12)
-    ax.grid(True)
+    plt.plot(V[:, 0], h_vec, color="blue", label=r"Min true airspeed $V_{min}^{true}$")
+    plt.plot(V[:, 1], h_vec, color="red", label=r"Max true airspeed $V_{max}^{true}$")
+    plt.fill(V_closed, h_closed, color="lightblue", alpha=0.6, label="Flight Envelope")
+    
+    # Adding the yellow zone from Vmax to 1.15*Vmax
+    V_1_15_max = 1.15 * V[:, 1]
+    plt.fill_betweenx(h_vec, V[:, 1], V_1_15_max, color="yellow", alpha=0.5, label=r"Margin zone")
+    plt.plot(V_1_15_max, h_vec, color="black")
 
-    # Second subplot: Equivalent airspeed flight envelope
-    ax = axes[1]
-    h_closed = np.concatenate([h_vec, h_vec[::-1]])  # Combine h and its reverse
-    V_closed = np.concatenate([V[:, 3], V[::-1, 2]])  # Combine vmax and reversed vmin
-    ax.plot(V[:, 2], h_vec, color="blue", label=r"Min equivalent airspeed $V_{min}^{eq}$")
-    ax.plot(V[:, 3], h_vec, color="red", label=r"Max equivalent airspeed $V_{max}^{eq}$")
-    ax.plot(V[:, 3] * alpha, h_vec, linestyle="-", color="tab:orange", linewidth=1.5,
-            label=r"Minimum flutter velocity required $V_{SL}^{flutter}$")
-    ax.fill(V_closed, h_closed, color="lightblue", alpha=0.6, label="Flight Envelope")
-    ax.fill_betweenx(h_vec, V[:, 3], V[:, 3] * alpha, color="yellow", alpha=0.5, label="Margin Zone for flutter")
-    ax.fill_betweenx(h_vec, V[:, 3] * alpha, 350 * np.ones(len(h_vec)), color="green", alpha=0.5, label="Safety zone for flutter")
-    ax.hlines(0, get_V_eq(0)[0], get_V_eq(0)[1], colors="black", linestyles="--", linewidth=1.5)
-    ax.hlines(3, get_V_eq(3)[0], get_V_eq(3)[1], colors="black", linestyles="--", linewidth=1.5)
-    ax.set_xlabel("Equivalent airspeed [km/h]", fontsize=12)
-    ax.set_ylabel("Altitude (h) [km]", fontsize=12)
-    ax.set_xlim(-10, 350)
-    ax.set_title("Equivalent Airspeed Flight Envelope", fontsize=14)
-    ax.legend(fontsize=12, loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=2)
-    ax.grid(True)
+    plt.hlines(0, flight_envelope(0)[0], 1.15*flight_envelope(0)[1], colors="black", linestyles="--", linewidth=1.5)
+    plt.hlines(3, flight_envelope(3)[0], 1.15*flight_envelope(3)[1], colors="black", linestyles="--", linewidth=1.5)
+
+
+    
+    plt.xlabel("True airspeed [km/h]", fontsize=12)
+    plt.ylabel("Altitude (h) [km]", fontsize=12)
+    plt.title("True Airspeed Flight Envelope", fontsize=14)
+    plt.xlim(-10, 400)
+    plt.legend(fontsize=12)
+    plt.grid(True)
 
     # Show plot
     plt.show()
+
+
+plot_flight_envelope() # plot the flight envelope of the aircraft
 
 # --------------------------------------- Parameters ------------------------------------- #
 
@@ -149,76 +132,115 @@ print(f"{'Pitching natural frequency (min)':<30} {'omega_theta_min':<15} {omega_
 print(f"{'Pitching natural frequency (max)':<30} {'omega_theta_max':<15} {omega_theta_max:<15.2f} {'rad/s'}")
 
 
-# --- Computation of dimensionless parameters for SEA LEVEL flutter velocity ----- #
-V_eq_max = get_V_eq(0.8)[1]/3.6 # [m/s]
+################################################################## Preliminary analysis #####################################################################################
 
-# Case 1 - min weight
-mu_min = m_min/(np.pi*RHO_0*b**2*l)
-r_min = np.sqrt(Ip_min/(m_min*b**2))
-sigma_min = omega_h_min/omega_theta_min
+# For each altitude h, we compute the flutter velocity using both p and p-k method
+h_vec = np.linspace(0,3,50)
 
-# Case 2 - max weight
-mu_max = m_max/(np.pi*RHO_0*b**2*l)
-r_max = np.sqrt(Ip_max/(m_max*b**2))
-sigma_max = omega_h_max/omega_theta_max
+V_min_max = np.zeros((len(h_vec), 2))
 
-# Definition of the reduced velocity to explore
-V_vec = np.linspace(0.01,2,200)
+V_flutter_p_min = []
+V_flutter_pk_min = []
 
-# Results with p-method and p-k method
-pmethod_SL_min = pmethod(a=a, e=e_min, mu=mu_min, r=r_min, sigma=sigma_min, V_vec=V_vec)
-pmethod_SL_max = pmethod(a=a, e=e_max, mu=mu_max, r=r_max, sigma=sigma_max, V_vec=V_vec)
-pkmethod_SL_min = pkmethod(a=a, e=e_min, mu=mu_min, r=r_min, sigma=sigma_min, V_vec=V_vec)
-pkmethod_SL_max = pkmethod(a=a, e=e_max, mu=mu_max, r=r_max, sigma=sigma_max, V_vec=V_vec, eps=10**(-8), k0=0.5)
-
-pmethod_SL_min.run()
-pmethod_SL_max.run()
-
-pkmethod_SL_min.run()
-pkmethod_SL_max.run()
-
-Vrf_min_pmethod, _ = pmethod_SL_min.find_flutter()
-Vrf_max_pmethod, _ = pmethod_SL_max.find_flutter()
-Vrf_max_pmethod = 1.290 # approximately, algorithm find_flutter does not work for this case
-
-Vrf_min_pkmethod, _ = pkmethod_SL_min.find_flutter()
-Vrf_max_pkmethod, _ = pkmethod_SL_max.find_flutter()
-
-# Convert reduced flutter speed into real speed 
-Vf_min_pmethod = Vrf_min_pmethod*b*omega_theta_min
-Vf_max_pmethod = Vrf_max_pmethod*b*omega_theta_max
-
-Vf_min_pkmethod = Vrf_min_pkmethod*b*omega_theta_min
-Vf_max_pkmethod = Vrf_max_pkmethod*b*omega_theta_max
+V_flutter_p_max = []
+V_flutter_pk_max = []
 
 
-# Check and print for p-method
-print("\n")
-if Vf_min_pmethod > alpha * V_eq_max:
-    print(f"PMETHOD: Flutter velocity for MIN weight ({Vf_min_pmethod:.2f} m/s) respects regulation (>{alpha * V_eq_max:.2f} m/s).\n")
-else:
-    print(f"PMETHOD: Flutter velocity for MIN weight ({Vf_min_pmethod:.2f} m/s) does NOT respect regulation (>{alpha * V_eq_max:.2f} m/s).\n")
+for i, h in enumerate(h_vec) : 
+    print(h)
+    V_min_max[i, 0], V_min_max[i, 1] = flight_envelope(h)
 
-if Vf_max_pmethod > alpha * V_eq_max:
-    print(f"PMETHOD: Flutter velocity for MAX weight ({Vf_max_pmethod:.2f} m/s) respects regulation (>{alpha * V_eq_max:.2f} m/s).\n")
-else:
-    print(f"PMETHOD: Flutter velocity for MAX weight ({Vf_max_pmethod:.2f} m/s) does NOT respect regulation (>{alpha * V_eq_max:.2f} m/s).\n")
+    rho = rho_fun(h) # get the density at this level
 
-# Check and print for pk-method
-if Vf_min_pkmethod > alpha * V_eq_max:
-    print(f"PKMETHOD: Flutter velocity for MIN weight ({Vf_min_pkmethod:.2f} m/s) respects regulation (>{alpha * V_eq_max:.2f} m/s).\n")
-else:
-    print(f"PKMETHOD: Flutter velocity for MIN weight ({Vf_min_pkmethod:.2f} m/s) does NOT respect regulation (>{alpha * V_eq_max:.2f} m/s).\n")
+    # Case 1 - min weight
+    mu_min = m_min/(np.pi*rho*b**2*l)
+    r_min = np.sqrt(Ip_min/(m_min*b**2))
+    sigma_min = omega_h_min/omega_theta_min
 
-if Vf_max_pkmethod > alpha * V_eq_max:
-    print(f"PKMETHOD: Flutter velocity for MAX weight ({Vf_max_pkmethod:.2f} m/s) respects regulation (>{alpha * V_eq_max:.2f} m/s).\n")
-else:
-    print(f"PKMETHOD: Flutter velocity for MAX weight ({Vf_max_pkmethod:.2f} m/s) does NOT respect regulation (>{alpha * V_eq_max:.2f} m/s).\n")
+    # Case 2 - max weight
+    mu_max = m_max/(np.pi*rho*b**2*l)
+    r_max = np.sqrt(Ip_max/(m_max*b**2))
+    sigma_max = omega_h_max/omega_theta_max
+
+    # Definition of the reduced velocity to explore
+    V_vec_min = np.linspace(0.01,3*V_min_max[i,1]/(3.6*b*omega_theta_min),400)
+    V_vec_max = np.linspace(0.01,3*V_min_max[i,1]/(3.6*b*omega_theta_max),400)
+
+    # Results with p-method and p-k method
+    pmethod_min = pmethod(a=a, e=e_min, mu=mu_min, r=r_min, sigma=sigma_min, V_vec=V_vec_min)
+    pmethod_max = pmethod(a=a, e=e_max, mu=mu_max, r=r_max, sigma=sigma_max, V_vec=V_vec_max)
+
+    pkmethod_min = pkmethod(a=a, e=e_min, mu=mu_min, r=r_min, sigma=sigma_min, V_vec=V_vec_min)
+    pkmethod_max = pkmethod(a=a, e=e_max, mu=mu_max, r=r_max, sigma=sigma_max, V_vec=V_vec_max)
+
+    # Run the two methods on the two cases
+    """ pmethod_min.run()
+    pmethod_max.run() """
+
+    pkmethod_min.run()
+    pkmethod_max.run()
+
+    if (abs(h-1.5)<0.1):
+        pkmethod_min.plot_results()
+
+
+    """ V_flutter_min_p, _ = pmethod_min.find_flutter()
+    V_flutter_max_p, _ = pmethod_max.find_flutter()
+    pmethod_max.plot_results() """
+
+    V_flutter_min_pk, _ = pkmethod_min.find_flutter()
+    V_flutter_max_pk, _ = pkmethod_max.find_flutter()
+
+
+    """ V_flutter_p_min.append(V_flutter_min_p)
+    V_flutter_p_max.append(V_flutter_max_p) """
+
+    V_flutter_pk_min.append(V_flutter_min_pk)
+    V_flutter_pk_max.append(V_flutter_max_pk)
+
+
+V_flutter_pk_max = np.array(V_flutter_pk_max)*3.6*b*omega_theta_max
+V_flutter_pk_min = np.array(V_flutter_pk_min)*3.6*b*omega_theta_min
 
 
 
+def plot_flight_envelope_with_flutter(h_vec, V, V_flutter_pk_min=None, V_flutter_pk_max=None):
+    # Combine h and its reverse
+    h_closed = np.concatenate([h_vec, h_vec[::-1]])
+    V_closed = np.concatenate([V[:, 1], V[::-1, 0]])
+
+    # Plot the flight envelope
+    plt.plot(V[:, 0], h_vec, color="blue", label=r"Min true airspeed $V_{min}^{true}$")
+    plt.plot(V[:, 1], h_vec, color="red", label=r"Max true airspeed $V_{max}^{true}$")
+    plt.fill(V_closed, h_closed, color="lightblue", alpha=0.6, label="Flight Envelope")
+
+    # Adding the yellow zone from Vmax to 1.15*Vmax
+    V_1_15_max = 1.15 * V[:, 1]
+    plt.fill_betweenx(h_vec, V[:, 1], V_1_15_max, color="yellow", alpha=0.5, label=r"Margin zone")
+    plt.plot(V_1_15_max, h_vec, color="black")
 
 
+    # Add flutter velocities if provided
+    if V_flutter_pk_min is not None:
+        plt.plot(V_flutter_pk_min, h_vec, color="green", linestyle="--", label=r"$V_{flutter}^{pk}$ - Min weight scenario", linewidth=2)
+    if V_flutter_pk_max is not None:
+        plt.plot(V_flutter_pk_max, h_vec, color="purple", linestyle="--", label=r"$V_{flutter}^{pk}$ - Max weight scenario", linewidth=2)
+
+    # Add horizontal boundaries for the flight envelope
+    plt.hlines(0, flight_envelope(0)[0], 1.15*flight_envelope(0)[1], colors="black", linestyles="--", linewidth=1.5)
+    plt.hlines(3, flight_envelope(3)[0], 1.15*flight_envelope(3)[1], colors="black", linestyles="--", linewidth=1.5)
+
+    # Plot settings
+    plt.xlabel("True airspeed [km/h]", fontsize=15)
+    plt.ylabel("Altitude (h) [km]", fontsize=15)
+    plt.xlim(-10, 450)
+    plt.legend(fontsize=12)
+    plt.grid(True)
+
+    # Show plot
+    plt.show()
+
+plot_flight_envelope_with_flutter(h_vec, V_min_max, V_flutter_pk_min, V_flutter_pk_max)
 
 
 

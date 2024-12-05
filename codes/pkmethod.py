@@ -37,7 +37,7 @@ class pkmethod():
                             0,
                             self.f22(k[-1], V) + self.f11(k[-1], V) * self.r**2 - self.f21(k[-1], V) * self.x_theta - self.f12(k[-1], V) * self.x_theta,
                             0,
-                            self.f11(k[-1], V) * self.f22(k[-1], V) - self.f12(k[-1], V) * self.f21(k[-1], V)]
+                            self.f11(k[-1], V) * self.f22(k[-1], V) - self.f12(k[-1], V) * self.f21(k[-1], V)]                    
                     
                     sol = np.roots(coeff)
                     # Sort the roots based on their imaginary parts
@@ -96,7 +96,7 @@ class pkmethod():
             self.flutter_frequency = None
             for i, V in enumerate(self.V_vec):
                 for rt in range(0, 4):
-                    if self.gamma_sol[i,rt]*self.k_sol[i,rt]*V>0.01 and self.k_sol[i,rt]*V>0: # the 0.01 can be modified depending on the case
+                    if self.gamma_sol[i,rt]*self.k_sol[i,rt]*V>self.thresold and self.k_sol[i,rt]*V>0: # the 0.01 can be modified depending on the case
                         self.flutter_speed = V 
                         self.flutter_frequency = self.k_sol[i,rt]* V
                         break
