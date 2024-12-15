@@ -104,7 +104,7 @@ class pkmethod():
                     break 
 
             if self.flutter_speed is not None:
-                print(f"The recuced flutter speed is approximately: {self.flutter_speed} and reduced flutter frequency is {self.flutter_frequency}")
+                print(f"The reduced flutter speed is approximately: {self.flutter_speed} and reduced flutter frequency is {self.flutter_frequency}")
             else:
                 print("No flutter speed found within the specified range.")
             return self.flutter_speed, self.flutter_frequency

@@ -3,11 +3,13 @@ import numpy as np
 from pmethod import *
 from pkmethod import *
 
-# Constants definition
+# ------------------------------------------------------------ Constants definition -----------------------------------------------------------------# 
 RHO_0 = 1.225 # Density at sea level [kg/m³]
 R = 287.058 # Temperature of at sea level [K]
 T0 = 288.15 # Specific gas constant [J/(kg.K)]
 G = 9.80665  # Gravitational constant [m/s²]
+
+# ------------------------------------------------------------ Functions definition -----------------------------------------------------------------# 
 
 def flight_envelope(h):
     # This function returns the minimum and maximum true speed for a given altitude h [km]
@@ -67,16 +69,17 @@ def plot_flight_envelope():
     plt.show()
 
 
+# ------------------------------------------------------------ Main code  -----------------------------------------------------------------# 
+
+# 1. Visualisation of the flight envelope
 plot_flight_envelope() # plot the flight envelope of the aircraft
 
-# --------------------------------------- Parameters ------------------------------------- #
+# 2. Definition of the variables
 
-# Regulation parameters
+# a) Regulation parameters
 alpha = 1.15
 
-# -------------------- Wing parameters ---------------------- #
-
-# Team parameters (team 5 - see Excel sheet)
+# b) Wing parameters
 S = 17.0 # wing area (whole wing) [m²]
 AR = 7.55 # Aspect ratio of the wing
 l = np.sqrt(AR*S)/2 # Span (length) of the right/left wing
@@ -107,7 +110,7 @@ omega_h_max = (1.8751)**2*np.sqrt(EI/(m_max*l**3))
 omega_theta_min = np.pi/2*np.sqrt(GJ/(Ip_min*l))
 omega_theta_max = np.pi/2*np.sqrt(GJ/(Ip_max*l))
 
-# Print results
+# c) Print parameters 
 print(f"{'Parameter':<30} {'Symbol':<15} {'Value':<15} {'Unit'}")
 print("-" * 65)
 print(f"{'Wing Area (whole wing)':<30} {'S':<15} {S:<15.2f} {'m²'}")
@@ -131,18 +134,61 @@ print(f"{'Plunging natural frequency (max)':<30} {'omega_h_max':<15} {omega_h_ma
 print(f"{'Pitching natural frequency (min)':<30} {'omega_theta_min':<15} {omega_theta_min:<15.2f} {'rad/s'}")
 print(f"{'Pitching natural frequency (max)':<30} {'omega_theta_max':<15} {omega_theta_max:<15.2f} {'rad/s'}")
 
+# 3. Divergence analysis of the initial design
 
-################################################################## Preliminary analysis #####################################################################################
+q_d = (np.pi/(2*l))**2*(GJ)/(c*4.5*b*(a+0.5)) # Divergence dynamic pressure (flexible beam -clamped-free modelisation)
 
-""" # For each altitude h, we compute the flutter velocity using both p and p-k method
+def plot_flight_envelope_with_divergence_speed(q_d):
+    # Define h vector
+    h_vec = np.linspace(0, 3, 100)
+    V = np.zeros((len(h_vec), 2)) # for each row (h constant) -> store vmin, vmax
+
+    V_d = []
+
+    # Calculate vmin and vmax
+    for i, h in enumerate(h_vec):
+        V[i, 0], V[i, 1] = flight_envelope(h)
+        V_d.append(np.sqrt(2*q_d/rho_fun(h))*3.6) # divergence dynamic pressure in km/h
+
+
+    # First subplot: True airspeed flight envelope
+    h_closed = np.concatenate([h_vec, h_vec[::-1]])  # Combine h and its reverse
+    V_closed = np.concatenate([V[:, 1], V[::-1, 0]])  # Combine vmax and reversed vmin
+    plt.plot(V[:, 0], h_vec, color="blue", label=r"Min true airspeed $V_{min}^{true}$")
+    plt.plot(V[:, 1], h_vec, color="red", label=r"Max true airspeed $V_{max}^{true}$")
+    plt.fill(V_closed, h_closed, color="lightblue", alpha=0.6, label="Flight Envelope")
+    
+    # Adding the yellow zone from Vmax to 1.15*Vmax
+    V_1_15_max = 1.15 * V[:, 1]
+    plt.fill_betweenx(h_vec, V[:, 1], V_1_15_max, color="yellow", alpha=0.5, label=r"Margin zone")
+    plt.plot(V_1_15_max, h_vec, color="black")
+
+    plt.hlines(0, flight_envelope(0)[0], 1.15*flight_envelope(0)[1], colors="black", linestyles="--", linewidth=1.5)
+    plt.hlines(3, flight_envelope(3)[0], 1.15*flight_envelope(3)[1], colors="black", linestyles="--", linewidth=1.5)
+
+    plt.plot(V_d, h_vec, color="tab:purple", linewidth=3, linestyle="--", label=r"Divergence speed - $V_d$ ")
+
+    plt.xlabel("True airspeed [km/h]", fontsize=12)
+    plt.ylabel("Altitude (h) [km]", fontsize=12)
+    plt.title("True Airspeed Flight Envelope with divergence speed", fontsize=14)
+    plt.xlim(-10, 400)
+    plt.legend(fontsize=12)
+    plt.grid(True)
+
+    # Show plot
+    plt.show()
+
+# Plot results 
+plot_flight_envelope_with_divergence_speed(q_d)
+
+# 4. Flutter analysis of the initial design
+
+# For each altitude h, we compute the flutter velocity using both p and p-k method
 h_vec = np.linspace(0,3,50)
 
 V_min_max = np.zeros((len(h_vec), 2))
 
-V_flutter_p_min = []
 V_flutter_pk_min = []
-
-V_flutter_p_max = []
 V_flutter_pk_max = []
 
 
@@ -166,31 +212,16 @@ for i, h in enumerate(h_vec) :
     V_vec_min = np.linspace(0.01,3*V_min_max[i,1]/(3.6*b*omega_theta_min),400)
     V_vec_max = np.linspace(0.01,3*V_min_max[i,1]/(3.6*b*omega_theta_max),400)
 
-    # Results with p-method and p-k method
-    # pmethod_min = pmethod(a=a, e=e_min, mu=mu_min, r=r_min, sigma=sigma_min, V_vec=V_vec_min)
-    # pmethod_max = pmethod(a=a, e=e_max, mu=mu_max, r=r_max, sigma=sigma_max, V_vec=V_vec_max)
+    # Results with p-k method
 
     pkmethod_min = pkmethod(a=a, e=e_min, mu=mu_min, r=r_min, sigma=sigma_min, V_vec=V_vec_min)
     pkmethod_max = pkmethod(a=a, e=e_max, mu=mu_max, r=r_max, sigma=sigma_max, V_vec=V_vec_max)
 
-    # Run the two methods on the two cases
-    # pmethod_min.run()
-    # pmethod_max.run()
-
     pkmethod_min.run()
     pkmethod_max.run()
 
-
-    #V_flutter_min_p, _ = pmethod_min.find_flutter()
-    #V_flutter_max_p, _ = pmethod_max.find_flutter()
-    pmethod_max.plot_results()
-
     V_flutter_min_pk, _ = pkmethod_min.find_flutter()
     V_flutter_max_pk, _ = pkmethod_max.find_flutter()
-
-
-    #V_flutter_p_min.append(V_flutter_min_p)
-    # V_flutter_p_max.append(V_flutter_max_p)
 
     V_flutter_pk_min.append(V_flutter_min_pk)
     V_flutter_pk_max.append(V_flutter_max_pk)
@@ -237,11 +268,12 @@ def plot_flight_envelope_with_flutter(h_vec, V, V_flutter_pk_min=None, V_flutter
     # Show plot
     plt.show()
 
-plot_flight_envelope_with_flutter(h_vec, V_min_max, V_flutter_pk_min, V_flutter_pk_max) """
+# Plot results 
+plot_flight_envelope_with_flutter(h_vec, V_min_max, V_flutter_pk_min, V_flutter_pk_max)
 
+# 5. Parametric analysis at h=1.5 km of mu, x_theta and r²
 
-####################################################################### Parametric analysis ################################################################
-"""h = 1.5
+h = 1.5
 rho = rho_fun(h)
 V_min, V_max = flight_envelope(h)
 
@@ -250,6 +282,7 @@ mu_min = m_min/(np.pi*rho*b**2*l)
 r_min = np.sqrt(Ip_min/(m_min*b**2))
 sigma_min = omega_h_min/omega_theta_min
 
+# Mu analysis
 mu_vec = np.linspace(0.1, 30, 200)
 Vf = [] # list to store flutter speeds
 V_vec = np.linspace(0.01, 2, 500)
@@ -270,17 +303,10 @@ plt.ylabel(r"$\frac{U}{b\omega_{\theta}}$ - Reduced flutter velocity", fontsize=
 plt.grid(True)
 plt.legend(fontsize=15)
 plt.show()
- """
 
-""" h = 1.5
-rho = rho_fun(h)
-V_min, V_max = flight_envelope(h)
 
-# Case 1 - min weight
-mu_min = m_min/(np.pi*rho*b**2*l)
-r_min = np.sqrt(Ip_min/(m_min*b**2))
-sigma_min = omega_h_min/omega_theta_min
 
+# r² analysis
 r_vec = np.linspace(0.15, 0.25, 100)
 Vf = [] # list to store flutter speeds
 V_vec = np.linspace(0.01, 2, 500)
@@ -299,17 +325,10 @@ plt.xlabel(r"$r^2 $ - Dimensionless radius of gyration", fontsize=15)
 plt.ylabel(r"$\frac{U}{b\omega_{\theta}}$ - Reduced flutter velocity", fontsize=15)
 plt.grid(True)
 plt.legend(fontsize=15)
-plt.show() """
+plt.show()
 
 
-""" h = 1.5
-rho = rho_fun(h)
-V_min, V_max = flight_envelope(h)
-
-# Case 1 - min weight
-mu_min = m_min/(np.pi*rho*b**2*l)
-r_min = np.sqrt(Ip_min/(m_min*b**2))
-sigma_min = omega_h_min/omega_theta_min
+# X-theta analysis
 
 e_vec = np.linspace(-0.30, -0.05, 150)
 Vf = [] # list to store flutter speeds
@@ -330,10 +349,10 @@ plt.ylabel(r"$\frac{U}{b\omega_{\theta}}$ - Reduced flutter velocity", fontsize=
 plt.grid(True)
 plt.legend(fontsize=15)
 plt.show()
- """
 
+# 6. Analysis of design modifications
 
-# -------------------- Wing parameters (modified design) ---------------------- #
+# a) Wing parameters (modified design) 
 
 # Team parameters (team 5 - see Excel sheet)
 S = 17.0 # wing area (whole wing) [m²]
@@ -356,8 +375,8 @@ a = -0.2 # Position of the elastic axis in all situations
 c = S/(2*l) # Chord length
 b = c/2 # See course
 
-EI = 2*10**5*1.00 # Bending rigidity of the wing [N.m²]
-GJ = 10**5*1.00 # Torsional rigidity of the wing [N.m²]
+EI = 2*10**5*1.15 # Bending rigidity of the wing [N.m²]
+GJ = 10**5*1.15 # Torsional rigidity of the wing [N.m²]
 
 # See appendix for these calculations
 omega_h_min = (1.8751)**2*np.sqrt(EI/(m_min*l**3))
@@ -366,7 +385,7 @@ omega_h_max = (1.8751)**2*np.sqrt(EI/(m_max*l**3))
 omega_theta_min = np.pi/2*np.sqrt(GJ/(Ip_min*l))
 omega_theta_max = np.pi/2*np.sqrt(GJ/(Ip_max*l))
 
-# Print results
+# Print parameters
 print(f"{'Parameter (modified design)':<30} {'Symbol':<15} {'Value':<15} {'Unit'}")
 print("-" * 65)
 print(f"{'Wing Area (whole wing)':<30} {'S':<15} {S:<15.2f} {'m²'}")
@@ -390,21 +409,19 @@ print(f"{'Plunging natural frequency (max)':<30} {'omega_h_max':<15} {omega_h_ma
 print(f"{'Pitching natural frequency (min)':<30} {'omega_theta_min':<15} {omega_theta_min:<15.2f} {'rad/s'}")
 print(f"{'Pitching natural frequency (max)':<30} {'omega_theta_max':<15} {omega_theta_max:<15.2f} {'rad/s'}")
 
+# b) Divergence analysis (modified design) 
 
+q_d = (np.pi/(2*l))**2*(GJ)/(c*4.5*b*(a+0.5))
+plot_flight_envelope_with_divergence_speed(q_d)
 
-################################################################## Modified design analysis #####################################################################################
+# c) Flutter analysis (modified design) [only for min weight scenario here]
 
 # For each altitude h, we compute the flutter velocity using both p and p-k method
 h_vec = np.linspace(0,3,50)
 
 V_min_max = np.zeros((len(h_vec), 2))
 
-V_flutter_p_min = []
 V_flutter_pk_min = []
-
-V_flutter_p_max = []
-V_flutter_pk_max = []
-
 
 for i, h in enumerate(h_vec) : 
     V_min_max[i, 0], V_min_max[i, 1] = flight_envelope(h)
@@ -419,21 +436,9 @@ for i, h in enumerate(h_vec) :
     # Definition of the reduced velocity to explore
     V_vec_min = np.linspace(0.01,3*V_min_max[i,1]/(3.6*b*omega_theta_min),400)
 
-    # Results with p-method and p-k method
-    # pmethod_min = pmethod(a=a, e=e_min, mu=mu_min, r=r_min, sigma=sigma_min, V_vec=V_vec_min)
-    # pmethod_max = pmethod(a=a, e=e_max, mu=mu_max, r=r_max, sigma=sigma_max, V_vec=V_vec_max)
-
     pkmethod_min = pkmethod(a=a, e=e_min, mu=mu_min, r=r_min, sigma=sigma_min, V_vec=V_vec_min)
-
-
     pkmethod_min.run()
-
-
     V_flutter_min_pk, _ = pkmethod_min.find_flutter()
-
-
-    #V_flutter_p_min.append(V_flutter_min_p)
-    # V_flutter_p_max.append(V_flutter_max_p)
 
     V_flutter_pk_min.append(V_flutter_min_pk)
 
